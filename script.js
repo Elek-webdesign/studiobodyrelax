@@ -176,7 +176,7 @@ function renderGrid(cat) {
   grid.innerHTML = list.map((t, i) => `
     <button class="tile${t.wide ? " wide" : ""}${t.contain ? " contain" : ""}" data-id="${t.id}"
             aria-expanded="false" aria-controls="detail" style="animation-delay:${i * 45}ms">
-      <img src="images/${t.img}" alt="" loading="lazy" style="${t.pos ? `object-position:${t.pos};` : ""}${t.zoom ? `scale:${t.zoom};transform-origin:0 100%;` : ""}">
+      <img src="${t.img}" alt="" loading="lazy" style="${t.pos ? `object-position:${t.pos};` : ""}${t.zoom ? `scale:${t.zoom};transform-origin:0 100%;` : ""}">
       <span class="tile-label">
         <span><strong>${t.title}</strong><small>${t.sub}</small></span>
         <span class="tile-plus">${icon("plus")}</span>
