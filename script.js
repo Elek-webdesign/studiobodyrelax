@@ -410,12 +410,16 @@ askForm.addEventListener("submit", e => {
     `${booking ? "Tretman i termin" : "Pitanje"}: ${data.poruka}`
   ].join("\n");
 
-  const done = document.getElementById("askDone");
   const fail = document.getElementById("askFail");
   const submit = askForm.querySelector(".ask-submit");
-  done.hidden = fail.hidden = true;
+  fail.hidden = true;
 
-  const success = () => { done.hidden = false; askForm.reset(); syncType(); };
+  const success = () => {
+    showThanks(data.ime, booking);
+    askForm.reset();
+    askForm.querySelector(`input[name=tip][value=${booking ? "zakazivanje" : "pitanje"}]`).checked = true;
+    syncType();
+  };
 
   if (!FORM_ENDPOINT) {
     location.href = `mailto:${STUDIO_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -433,4 +437,70 @@ askForm.addEventListener("submit", e => {
     .then(r => { if (!r.ok) throw new Error(r.status); success(); })
     .catch(() => { fail.hidden = false; })
     .finally(() => { submit.disabled = false; submit.classList.remove("sending"); });
+});
+
+// Confirmation panel with an animated check mark
+const thanks = document.getElementById("askThanks");
+const againBtn = document.getElementById("askAgain");
+function showThanks(name, booking) {
+  document.getElementById("thanksTitle").textContent = `Hvala, ${name}`;
+  document.getElementById("thanksText").textContent = booking
+    ? "Primili smo Vaš zahtev za termin. Javićemo Vam se u toku radnog vremena kako bismo potvrdili termin ili predložili prvi slobodan."
+    : "Primili smo Vaš upit. Odgovorićemo Vam u toku radnog vremena, od ponedeljka do subote, od 12 do 21h.";
+  againBtn.textContent = booking ? "Zakaži novi termin" : "Pošalji novi upit";
+  askForm.classList.remove("returning");
+  askForm.classList.add("sent");
+  thanks.hidden = false;
+  thanks.classList.remove("play", "leaving");
+  thanks.offsetWidth; // restart the animation
+  thanks.classList.add("play");
+  document.getElementById("thanksTitle").focus({ preventScroll: true });
+  const r = thanks.getBoundingClientRect();
+  if (r.top < 90 || r.bottom > innerHeight) window.scrollTo({ top: scrollY + r.top - 140, behavior: "smooth" });
+}
+againBtn.addEventListener("click", () => {
+  const back = () => {
+    if (!thanks.classList.contains("leaving")) return;
+    thanks.hidden = true;
+    thanks.classList.remove("play", "leaving");
+    askForm.classList.remove("sent");
+    askForm.classList.add("returning");
+    askForm.ime.focus({ preventScroll: true });
+    setTimeout(() => askForm.classList.remove("returning"), 900);
+  };
+  thanks.classList.add("leaving");
+  setTimeout(back, 380);
+});
+
+// FAQ: answers slide open and closed softly
+document.querySelectorAll(".faq details").forEach(det => {
+  const summary = det.querySelector("summary");
+  const answer = det.querySelector("p");
+  let anim = null;
+  summary.addEventListener("click", e => {
+    e.preventDefault();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { det.open = !det.open; return; }
+    if (anim) anim.cancel();
+    const opening = !det.open || det.classList.contains("closing");
+    det.classList.remove("closing");
+    if (opening) {
+      det.open = true;
+      const h = answer.scrollHeight;
+      anim = answer.animate(
+        [{ height: "0px", paddingBottom: "0px", opacity: 0, transform: "translateY(-6px)" }, { height: h + "px", paddingBottom: "20px", opacity: 1, transform: "none" }],
+        { duration: 520, easing: "cubic-bezier(.33, 1, .68, 1)" }
+      );
+    } else {
+      det.classList.add("closing");
+      const h = answer.offsetHeight;
+      anim = answer.animate(
+        [{ height: h + "px", paddingBottom: "20px", opacity: 1 }, { height: "0px", paddingBottom: "0px", opacity: 0 }],
+        { duration: 380, easing: "cubic-bezier(.33, 1, .68, 1)" }
+      );
+      const done = () => { if (det.classList.contains("closing")) { det.open = false; det.classList.remove("closing"); } };
+      anim.onfinish = done;
+      setTimeout(done, 420); // fallback if the animation is throttled
+    }
+    anim.oncancel = () => { anim = null; };
+  });
 });

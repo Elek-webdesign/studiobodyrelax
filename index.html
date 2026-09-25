@@ -345,9 +345,11 @@
             <small class="err">Napišite poruku</small>
           </div>
           <button class="btn btn-dark ask-submit" type="submit">Pošalji upit <span class="ico"><svg><use href="#arrow"/></svg></span></button>
-          <div class="ask-done" id="askDone" hidden>
-            <svg><use href="#heart"/></svg>
-            <div><strong>Hvala.</strong> Upit je poslat. Javićemo vam se u toku radnog vremena.</div>
+          <div class="ask-thanks" id="askThanks" hidden role="status" aria-live="polite">
+            <svg class="check" viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="24"/><path d="M15.5 27.5l7 7 14-15"/></svg>
+            <h3 id="thanksTitle" tabindex="-1">Hvala na upitu</h3>
+            <p id="thanksText">Primili smo Vaš upit. Odgovorićemo Vam u toku radnog vremena, od ponedeljka do subote, od 12 do 21h.</p>
+            <button type="button" class="btn btn-outline" id="askAgain">Pošalji novi upit</button>
           </div>
           <div class="ask-done ask-fail" id="askFail" hidden>
             <svg><use href="#phone"/></svg>
