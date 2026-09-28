@@ -335,7 +335,7 @@ document.getElementById("year").textContent = new Date().getFullYear();
 
 // Soft ripple on click
 document.addEventListener("pointerdown", e => {
-  const el = e.target.closest(".btn, .tab, .quickbar a, .rules summary");
+  const el = e.target.closest(".btn, .tab, .rules summary");
   if (!el) return;
   const r = el.getBoundingClientRect();
   const dot = document.createElement("span");
@@ -356,7 +356,7 @@ toTop.addEventListener("click", () => {
   toTop.classList.remove("launch");
   toTop.offsetWidth;
   toTop.classList.add("launch");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  softScrollTo(0);
 });
 
 // Ask / booking form → email to the studio
@@ -503,4 +503,50 @@ document.querySelectorAll(".faq details").forEach(det => {
     }
     anim.oncancel = () => { anim = null; };
   });
+});
+
+// Softer, slower scrolling on phones (desktop keeps the native smooth scroll)
+const isPhone = () => matchMedia("(max-width: 768px)").matches;
+let scrollAnim = null;
+function softScrollTo(targetY) {
+  if (!isPhone() || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    window.scrollTo({ top: targetY, behavior: "smooth" });
+    return;
+  }
+  cancelAnimationFrame(scrollAnim);
+  const root = document.documentElement;
+  const startY = scrollY;
+  const maxY = root.scrollHeight - innerHeight;
+  const endY = Math.max(0, Math.min(targetY, maxY));
+  const dist = Math.abs(endY - startY);
+  if (dist < 2) return;
+  const duration = Math.min(1600, Math.max(700, dist * 0.35));
+  const ease = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2); // ease-in-out
+  const prev = root.style.scrollBehavior;
+  root.style.scrollBehavior = "auto";
+  const t0 = performance.now();
+  const stop = () => { cancelAnimationFrame(scrollAnim); root.style.scrollBehavior = prev; removeEventListener("touchstart", stop); removeEventListener("wheel", stop); };
+  addEventListener("touchstart", stop, { passive: true, once: true });
+  addEventListener("wheel", stop, { passive: true, once: true });
+  const step = () => {
+    const t = Math.min(1, Math.max(0, (performance.now() - t0) / duration));
+    window.scrollTo(0, startY + (endY - startY) * ease(t));
+    if (t < 1) scrollAnim = requestAnimationFrame(step);
+    else stop();
+  };
+  scrollAnim = requestAnimationFrame(step);
+  // if frames are paused (hidden tab), finish at once instead of hanging
+  let ticked = false;
+  const first = requestAnimationFrame(() => { ticked = true; });
+  setTimeout(() => { if (!ticked) { cancelAnimationFrame(first); stop(); window.scrollTo(0, endY); } }, 250);
+}
+document.addEventListener("click", e => {
+  const link = e.target.closest("a[href^=\"#\"]");
+  if (!link || !isPhone()) return;
+  const id = link.getAttribute("href");
+  const target = id === "#top" ? document.body : document.querySelector(id);
+  if (!target) return;
+  e.preventDefault();
+  const offset = id === "#top" ? 0 : target.getBoundingClientRect().top + scrollY - 88;
+  softScrollTo(offset);
 });
